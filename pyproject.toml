@@ -6,6 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "wheel"
 description = "A built-package format for Python"
 readme = "README.rst"
+license = {file = "LICENSE.txt"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -13,17 +14,17 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 authors = [{name = "Daniel Holth", email = "dholth@fastmail.fm"}]
 maintainers = [{name = "Alex Grönholm", email = "alex.gronholm@nextday.fi"}]
 keywords = ["wheel", "packaging"]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dynamic = ["version"]
 
 [project.urls]
@@ -69,14 +70,9 @@ exclude = [
     "**/__pycache__",
 ]
 
-[tool.black]
-extend-exclude = '''
-^/src/wheel/vendored/
-'''
-
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+addopts = ["-rsfE", "--tb=short", "--strict-markers", "--strict-config"]
 xfail_strict = true
 filterwarnings = [
     "error",
@@ -88,21 +84,30 @@ testpaths = ["test"]
 [tool.coverage.run]
 source = ["wheel"]
 omit = ["*/vendored/*"]
+exclude_also = [
+    "@overload",
+    "if TYPE_CHECKING:"
+]
 
 [tool.coverage.report]
 show_missing = true
+exclude_also = [
+    "@abstractmethod",
+]
 
 [tool.ruff]
-line-length = 88
-src = ["src"]
+extend-exclude = ["src/wheel/vendored"]
 
 [tool.ruff.lint]
-select = [
-    "E", "F", "W",  # default flake-8
-    "I",            # isort
-    "PGH",          # pygrep-hooks
-    "UP",           # pyupgrade
+extend-select = [
     "B",            # flake8-bugbear
+    "G",            # flake8-logging-format
+    "I",            # isort
+    "ISC",          # flake8-implicit-str-concat
+    "PGH",          # pygrep-hooks
+    "RUF100",       # unused noqa (yesqa)
+    "UP",           # pyupgrade
+    "W",            # pycodestyle warnings
 ]
 
 # Tox (https://tox.wiki/) is a tool for running tests in multiple virtualenvs.
@@ -113,7 +118,7 @@ select = [
 [tool.tox]
 legacy_tox_ini = '''
 [tox]
-envlist = py37, py38, py39, py310, py311, py312, py313, pypy3, lint, pkg
+envlist = py38, py39, py310, py311, py312, py313, pypy3, lint, pkg
 minversion = 4.0.0
 skip_missing_interpreters = true
 

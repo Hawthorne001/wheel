@@ -1,6 +1,38 @@
 Release Notes
 =============
 
+**UNRELEASED**
+
+- Fixed an exception when calling the ``convert`` command with an empty description
+  field
+
+**0.45.1 (2024-11-23)**
+
+- Fixed pure Python wheels converted from eggs and wininst files having the ABI tag in
+  the file name
+
+**0.45.0 (2024-11-08)**
+
+- Refactored the ``convert`` command to not need setuptools to be installed
+- Don't configure setuptools logging unless running ``bdist_wheel``
+- Added a redirection from ``wheel.bdist_wheel.bdist_wheel`` to
+  ``setuptools.command.bdist_wheel.bdist_wheel`` to improve compatibility with
+  ``setuptools``' latest fixes.
+
+  Projects are still advised to migrate away from the deprecated  module and import
+  the ``setuptools``' implementation explicitly. (PR by @abravalheri)
+
+**0.44.0 (2024-08-04)**
+
+- Canonicalized requirements in METADATA file (PR by Wim Jeantine-Glenn)
+- Deprecated the ``bdist_wheel`` module, as the code was migrated to ``setuptools``
+  itself
+
+**0.43.0 (2024-03-11)**
+
+- Dropped support for Python 3.7
+- Updated vendored ``packaging`` to 24.0
+
 **0.42.0 (2023-11-26)**
 
 - Allowed removing build tag with ``wheel tags --build ""``

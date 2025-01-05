@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import builtins
+import importlib
 import os.path
+import platform
 import shutil
 import stat
 import struct
@@ -14,7 +17,7 @@ from zipfile import ZipFile
 import pytest
 import setuptools
 
-from wheel.bdist_wheel import (
+from wheel._bdist_wheel import (
     bdist_wheel,
     get_abi_tag,
     remove_readonly,
@@ -327,7 +330,7 @@ def test_platform_with_space(dummy_dist, monkeypatch):
     )
 
 
-def test_rmtree_readonly(monkeypatch, tmp_path, capsys):
+def test_rmtree_readonly(monkeypatch, tmp_path):
     """Verify onerr works as expected"""
 
     bdist_dir = tmp_path / "with_readonly"
@@ -348,10 +351,6 @@ def test_rmtree_readonly(monkeypatch, tmp_path, capsys):
         assert count_remove_readonly_exc.call_count == expected_count
 
     assert not bdist_dir.is_dir()
-
-    if expected_count:
-        captured = capsys.readouterr()
-        assert "file.txt" in captured.stdout
 
 
 def test_data_dir_with_tag_build(monkeypatch, tmp_path):
@@ -413,6 +412,9 @@ def test_data_dir_with_tag_build(monkeypatch, tmp_path):
     "reported,expected",
     [("linux-x86_64", "linux_i686"), ("linux-aarch64", "linux_armv7l")],
 )
+@pytest.mark.skipif(
+    platform.system() != "Linux", reason="Only makes sense to test on Linux"
+)
 def test_platform_linux32(reported, expected, monkeypatch):
     monkeypatch.setattr(struct, "calcsize", lambda x: 4)
     dist = setuptools.Distribution()
@@ -421,3 +423,30 @@ def test_platform_linux32(reported, expected, monkeypatch):
     cmd.root_is_pure = False
     _, _, actual = cmd.get_tag()
     assert actual == expected
+
+
+def test_no_ctypes(monkeypatch) -> None:
+    def _fake_import(name: str, *args, **kwargs):
+        if name == "ctypes":
+            raise ModuleNotFoundError(f"No module named {name}")
+
+        return importlib.__import__(name, *args, **kwargs)
+
+    # Install an importer shim that refuses to load ctypes
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+
+    # Unload all wheel modules
+    for module in list(sys.modules):
+        if module.startswith("wheel"):
+            monkeypatch.delitem(sys.modules, module)
+
+    from wheel import _bdist_wheel
+
+    assert _bdist_wheel
+
+
+def test_deprecated_import() -> None:
+    with pytest.warns(DeprecationWarning):
+        from wheel import bdist_wheel
+
+    assert issubclass(bdist_wheel.bdist_wheel, setuptools.Command)
